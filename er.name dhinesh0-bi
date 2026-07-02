@@ -1,0 +1,24 @@
+[33mcommit 3fd49230f57060d80e257e523aa0187469d26d9a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: verduxdev-svg <verdux.dev@gmail.com>
+Date:   Thu Jul 2 09:26:27 2026 +0530
+
+    Initial commit
+
+[33mcommit 76f6a3b5f5065a9ec53e5a00753d279785cb45ca[m
+Merge: a2253d1 fc1adcc
+Author: verduxdev-svg <verdux.dev@gmail.com>
+Date:   Thu Jul 2 09:09:12 2026 +0530
+
+    Merge branch 'main' of https://github.com/dhinesh0-bi/Rag_Codebase_analyser
+
+[33mcommit a2253d1133381648ad13e079efd2caea96957860[m
+Author: verduxdev-svg <verdux.dev@gmail.com>
+Date:   Thu Jul 2 09:01:25 2026 +0530
+
+    Initial commit of Codebase Companion RAG backend (6 phases completed)
+
+[33mcommit fc1adcc432403b0f18cea73053ec4f722c17aef6[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: dhinesh k <kdhinesh2005@gmail.com>
+Date:   Thu Jul 2 08:59:47 2026 +0530
+
+    Initial commit

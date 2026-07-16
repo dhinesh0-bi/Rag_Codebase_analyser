@@ -32,10 +32,11 @@ Rules you MUST follow:
 5. When quoting specific lines of code, use markdown code blocks."""
 
 
-def _build_user_prompt(question: str, retrieved_docs: list) -> str:
+def build_user_prompt(question: str, retrieved_docs: list) -> str:
     """
-    Constructs the user-facing part of the prompt by injecting the
-    retrieved code chunks with their full metadata.
+    Public function - constructs the user-facing part of the prompt by injecting
+    retrieved code chunks with their full metadata. Called by both generation.py
+    (for CLI use) and app.py (for SSE streaming to the frontend).
 
     The exact prompt string looks like this:
 
@@ -44,7 +45,7 @@ def _build_user_prompt(question: str, retrieved_docs: list) -> str:
     [Chunk 1 of 3]
     File     : backend/api/views.py
     Function : analyze_review
-    Lines    : 33 – 93
+    Lines    : 33 - 93
     ---
     def analyze_review(request):
         ...full source code...
@@ -69,7 +70,7 @@ def _build_user_prompt(question: str, retrieved_docs: list) -> str:
         context_lines.append(f"[Chunk {i} of {len(retrieved_docs)}]")
         context_lines.append(f"File     : {file_path}")
         context_lines.append(f"Function : {name}")
-        context_lines.append(f"Lines    : {start} – {end}")
+        context_lines.append(f"Lines    : {start} - {end}")
         context_lines.append("---")
         context_lines.append(doc.page_content)
         context_lines.append("")  # blank line between chunks
@@ -91,7 +92,7 @@ def _stream_gemini(question: str, retrieved_docs: list, model: str) -> str:
     api_key = os.environ.get("GEMINI_API_KEY")
     client  = genai.Client(api_key=api_key)
 
-    user_prompt = _build_user_prompt(question, retrieved_docs)
+    user_prompt = build_user_prompt(question, retrieved_docs)
 
     print(f"\n[Phase 5] Streaming answer from {model}...")
     print("-" * 60)
@@ -122,7 +123,7 @@ def _fallback_no_key(question: str, retrieved_docs: list) -> str:
     Prints the exact formatted prompt that would have been sent (safely encoded),
     plus the raw retrieved chunks.
     """
-    user_prompt = _build_user_prompt(question, retrieved_docs)
+    user_prompt = build_user_prompt(question, retrieved_docs)
 
     print("\n" + "-" * 60)
     print("WARNING: GEMINI_API_KEY not set - showing retrieved context only.")
@@ -148,7 +149,7 @@ def _fallback_no_key(question: str, retrieved_docs: list) -> str:
 def ask_llm(
     question: str,
     retrieved_docs: list,
-    model: str = "gemini-1.5-flash",  # best free-tier quota; try "gemini-2.5-flash" with billing
+    model: str = "gemini-2.5-flash",  # best free-tier quota; try "gemini-2.5-flash" with billing
 ) -> str:
     """
     Phase 5 entry point.

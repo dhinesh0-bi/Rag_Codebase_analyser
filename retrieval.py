@@ -21,14 +21,17 @@ from store_embeddings import load_vector_store
 # ── Constants ────────────────────────────────────────────────────────────────
 
 # How many candidates to pull from ChromaDB in Stage 1
-CANDIDATE_K = 10
+CANDIDATE_K = 25
 
 # How many final chunks to return after reranking in Stage 2
-FINAL_TOP_N = 3
+FINAL_TOP_N = 6
 
-# Lightweight but strong cross-encoder trained on MS-MARCO passage ranking.
-# ~66 MB download on first use, then cached locally.
+# Cross-encoder for reranking. ms-marco works for general semantic similarity.
 CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+
+# Score threshold: if all reranked scores are below this, skip reranking
+# and use the raw bi-encoder top results instead
+RERANK_SCORE_THRESHOLD = -8.0
 
 
 # ── Stage 1: Bi-Encoder Retrieval ────────────────────────────────────────────
@@ -87,9 +90,18 @@ def rerank(query: str, candidates: list, top_n: int = FINAL_TOP_N) -> list:
         reverse=True
     )
 
-    results = [{"document": doc, "score": float(score)} for score, doc in scored[:top_n]]
+    best_score = float(scored[0][0]) if scored else -999
 
-    print(f"[Phase 4 — Stage 2] Top {top_n} chunks after reranking:")
+    # If all scores are very negative, the cross-encoder failed to find good matches.
+    # Fall back to returning the raw bi-encoder top results (they're still semantically similar).
+    if best_score < RERANK_SCORE_THRESHOLD:
+        print(f"[Phase 4 — Stage 2] Reranker scores too low (best={best_score:.2f}). "
+              f"Falling back to bi-encoder top-{top_n} results.")
+        results = [{"document": doc, "score": -1.0} for doc in candidates[:top_n]]
+    else:
+        results = [{"document": doc, "score": float(score)} for score, doc in scored[:top_n]]
+
+    print(f"[Phase 4 — Stage 2] Top {len(results)} chunks selected:")
     for i, item in enumerate(results):
         meta = item["document"].metadata
         print(

@@ -4,6 +4,8 @@ GitPython==3.1.43
 # Phase 2 — AST Parsing
 tree-sitter==0.23.1
 tree-sitter-python==0.23.2
+tree-sitter-javascript==0.23.1
+tree-sitter-typescript==0.23.2
 
 # Phase 3 — Embeddings & Vector Store
 chromadb==1.5.9
@@ -18,4 +20,14 @@ google-genai
 
 # Phase 6 — FastAPI Backend
 fastapi
-uvicorn
+uvicorn[standard]
+python-multipart
+python-dotenv
+sse-starlette
+
+# Authentication — Firebase Admin SDK
+firebase-admin
+
+# Rate Limiting
+slowapi
+upstash-redis

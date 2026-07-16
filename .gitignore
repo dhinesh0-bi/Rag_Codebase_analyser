@@ -1,49 +1,54 @@
-# Byte-compiled / optimized / DLL files
+# ─────────────────────────────────────────────
+# ROOT .gitignore — Codebase Companion RAG
+# ─────────────────────────────────────────────
+
+# ── Python ────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
 *.egg
+*.egg-info/
+dist/
+build/
+.eggs/
 
-# Virtual environments
+# ── Virtual environments ──────────────────────
 venv/
 .venv/
 env/
-.env/
 ENV/
-env.bak/
-venv.bak/
 
-# Vector database storage
-chroma_db/
-
-# API keys and secrets
+# ── Environment variables & secrets ──────────
 .env
 .env.*
+!.env.example
+firebase-service-account.json
 secrets.json
 
-# IDEs and editors
+# ── RAG / ML artifacts ────────────────────────
+chroma_db/
+
+# ── Test scripts (temp) ───────────────────────
+test_stream.py
+test_gemini.py
+test_gemini_models.py
+test_pipeline.py
+test_ast.py
+
+# ── IDEs ──────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
+
+# ── OS files ──────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Frontend — node_modules (covered by frontend/.gitignore too) ──
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example

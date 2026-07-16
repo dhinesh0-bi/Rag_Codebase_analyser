@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────
+# frontend/.gitignore — React/Vite Frontend
+# ─────────────────────────────────────────────
+
+# ── Dependencies ──────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Production build output ───────────────────
+dist/
+build/
+
+# ── Environment variables & secrets ──────────
+.env
+.env.*
+!.env.example
+
+# ── Vite cache ────────────────────────────────
+.vite/
+vite.config.js.timestamp-*
+
+# ── Testing ───────────────────────────────────
+coverage/
+
+# ── IDEs ──────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS files ──────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Storybook ─────────────────────────────────
+storybook-static/

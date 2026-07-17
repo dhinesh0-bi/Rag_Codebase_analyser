@@ -45,7 +45,9 @@ try:
     if os.path.exists(_service_account_path):
         cred = credentials.Certificate(_service_account_path)
     elif _service_account_b64:
-        _sa_json = _json.loads(base64.b64decode(_service_account_b64).decode("utf-8"))
+        # Add padding if needed — Render/Railway can strip trailing '=' from env vars
+        _padded = _service_account_b64.strip() + "==="
+        _sa_json = _json.loads(base64.b64decode(_padded).decode("utf-8"))
         cred = credentials.Certificate(_sa_json)
     else:
         cred = None

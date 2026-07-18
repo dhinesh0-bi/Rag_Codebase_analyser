@@ -71,12 +71,33 @@ except ImportError:
     _firebase_configured = False
     print("[Auth] firebase-admin not installed. Auth is DISABLED.")
 
-# RAG pipeline modules
-from ingest import clone_github_repo
-from ast_parser import extract_code_chunks
-from store_embeddings import store_in_chroma
-from retrieval import search_and_rerank
-from generation import ask_llm, build_user_prompt, SYSTEM_PROMPT
+# RAG pipeline modules — imported LAZILY on first request to avoid OOM at startup.
+# sentence-transformers + chromadb + langchain together use ~400MB which exceeds
+# the 512MB limit on Render free tier before the server can even bind to a port.
+_rag_modules = {}
+
+def _load_rag_modules():
+    """Import all heavy RAG modules once, on first use."""
+    global _rag_modules
+    if _rag_modules:
+        return _rag_modules
+    print("[RAG] Loading pipeline modules for the first time...")
+    from ingest import clone_github_repo
+    from ast_parser import extract_code_chunks
+    from store_embeddings import store_in_chroma
+    from retrieval import search_and_rerank
+    from generation import ask_llm, build_user_prompt, SYSTEM_PROMPT
+    _rag_modules = {
+        "clone_github_repo": clone_github_repo,
+        "extract_code_chunks": extract_code_chunks,
+        "store_in_chroma": store_in_chroma,
+        "search_and_rerank": search_and_rerank,
+        "ask_llm": ask_llm,
+        "build_user_prompt": build_user_prompt,
+        "SYSTEM_PROMPT": SYSTEM_PROMPT,
+    }
+    print("[RAG] Pipeline modules loaded successfully.")
+    return _rag_modules
 
 # ── Rate Limiter Setup ────────────────────────────────────────────────────────
 
@@ -197,7 +218,14 @@ async def run_pipeline(repo_url: str, question: str) -> tuple[str, list]:
     Returns (full_answer, top_docs).
     """
     loop = asyncio.get_event_loop()
-    
+
+    # Lazy-load heavy modules on first request (avoids OOM at startup on free tier)
+    mods = await loop.run_in_executor(None, _load_rag_modules)
+    clone_github_repo  = mods["clone_github_repo"]
+    extract_code_chunks = mods["extract_code_chunks"]
+    store_in_chroma    = mods["store_in_chroma"]
+    search_and_rerank  = mods["search_and_rerank"]
+
     # Phase 1: Ingest (I/O bound - git clone)
     collected_files = await loop.run_in_executor(
         None, functools.partial(clone_github_repo, repo_url)
@@ -219,7 +247,7 @@ async def run_pipeline(repo_url: str, question: str) -> tuple[str, list]:
     top_docs = await loop.run_in_executor(
         None, functools.partial(search_and_rerank, question)
     )
-    
+
     return top_docs
 
 
@@ -328,7 +356,8 @@ async def stream_chat(payload: ChatRequest, request: Request):
             api_key = os.environ.get("GEMINI_API_KEY")
             if not api_key:
                 # Fallback: emit the context prompt as plain text
-                fallback = build_user_prompt(payload.question, top_docs)
+                _m = _load_rag_modules()
+                fallback = _m["build_user_prompt"](payload.question, top_docs)
                 for word in fallback.split(" "):
                     yield {"data": json.dumps({"type": "token", "data": word + " "})}
                     await asyncio.sleep(0.02)
@@ -339,7 +368,7 @@ async def stream_chat(payload: ChatRequest, request: Request):
                 import threading
 
                 client = genai.Client(api_key=api_key)
-                user_prompt = build_user_prompt(payload.question, top_docs)
+                user_prompt = _load_rag_modules()["build_user_prompt"](payload.question, top_docs)
 
                 q = queue.Queue()
 
@@ -349,7 +378,7 @@ async def stream_chat(payload: ChatRequest, request: Request):
                             model=os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"),
                             contents=user_prompt,
                             config=genai_types.GenerateContentConfig(
-                                system_instruction=SYSTEM_PROMPT,
+                                system_instruction=_load_rag_modules()["SYSTEM_PROMPT"],
                                 temperature=0.1,
                                 max_output_tokens=2048,
                             ),

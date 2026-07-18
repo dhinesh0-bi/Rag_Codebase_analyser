@@ -45,10 +45,17 @@ try:
     if os.path.exists(_service_account_path):
         cred = credentials.Certificate(_service_account_path)
     elif _service_account_b64:
-        # Add padding if needed — Render/Railway can strip trailing '=' from env vars
-        _padded = _service_account_b64.strip() + "==="
-        _sa_json = _json.loads(base64.b64decode(_padded).decode("utf-8"))
-        cred = credentials.Certificate(_sa_json)
+        try:
+            # Render/Railway can corrupt base64 by stripping '=' or adding whitespace.
+            # validate=False tells Python to decode leniently and ignore padding errors.
+            _raw = _service_account_b64.strip().replace(" ", "").replace("\n", "")
+            # Ensure correct padding (add up to 3 '=' chars; extras are ignored)
+            _raw += "=" * (4 - len(_raw) % 4)
+            _sa_json = _json.loads(base64.b64decode(_raw, validate=False).decode("utf-8"))
+            cred = credentials.Certificate(_sa_json)
+        except Exception as b64_err:
+            print(f"[Auth] WARNING: Failed to decode FIREBASE_SERVICE_ACCOUNT_B64: {b64_err}")
+            cred = None
     else:
         cred = None
 
